@@ -2,7 +2,7 @@
     "Window": [1280, 720, 60],
 	"Fullscreen": false,
 	"Background": [15, 20, 10],
-    "Font": ["resources/fonts/alpha_beta.png", 20, 255, 255, 255],
+    "Font": ["fonts/arial.ttf", 20, 255, 255, 255],
     "Player": {
         "Sides": 3,
         "Size": 20,
