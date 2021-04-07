@@ -1,0 +1,29 @@
+{
+    "Window": [1280, 720, 60],
+	"Fullscreen": false,
+	"Background": [15, 20, 10],
+    "Font": ["resources/fonts/alpha_beta.png", 20, 255, 255, 255],
+    "Player": {
+        "Sides": 3,
+        "Size": 20,
+		"Collision": 18,
+		"Speed": 240.0,
+		"Colour": [30, 41, 90],
+		"Outline": [245, 245, 245, 4]
+    },
+    "Enemy": {
+        "Size": 25,
+        "Collision": 23,
+        "Speed": 240.0,
+		"Outline": [200, 40, 20, 2],
+		"DebrisLife": 5000,
+		"Spawn": 1.0
+    },
+	"Bullet": {
+        "Size": 5,
+        "Collision": 5,
+        "Speed": 600.0,
+		"Outline": [0, 0, 0, 1],
+		"Duration": 1500
+    }
+}
