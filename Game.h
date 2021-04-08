@@ -27,7 +27,7 @@ struct FontConfig
 	std::string file; // TTF, XNA fonts, AngelCode fonts
 	Font style; // loaded from file
 	float size = 20; // font size
-	Color col = WHITE; // font colour
+	Color col = WHITE; // font colour (RGBA)
 };
 
 struct PlayerConfig 
