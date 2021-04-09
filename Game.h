@@ -2,7 +2,7 @@
 
 #include "Entity.h"
 #include "EntityManager.h"
-#include "nlohmann/json.hpp"
+#include "include/nlohmann/json.hpp"
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
@@ -57,10 +57,10 @@ struct BulletConfig
 	int radius = 5; // bullet size (pixels)
 	int c_radius = 5; // bullet collision size (pixels
 	int o_thick = 1; // bullet outline thickness (pixels)
-	int duration = 90; // bullet duration (frames converted from milliseconds in config)
+	int duration = 72; // bullet duration (frames converted from milliseconds in config)
 	Color col = RAYWHITE; // bullet colour (RGBA)
 	Color o_col = BLACK; // bullet outline colour (RGBA)
-	float speed = 600; // pixels/second
+	float speed = 1100; // pixels/second
 };
 
 class Game
