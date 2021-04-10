@@ -24,6 +24,7 @@ class Entity {
 		std::shared_ptr<CScore> cScore;
 		std::shared_ptr<CDuration> cDuration;
 		std::shared_ptr<CDash> cDash;
+		std::shared_ptr<CLabel> cLabel;
 		// getters
 		bool isActive() const;
 		const std::string & tag() const;

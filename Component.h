@@ -34,6 +34,17 @@ public:
 		: radius(r) {}
 };
 
+class CLabel
+{
+public:
+	const char *text;
+	float size;
+	Color colour;
+	
+	CLabel(const char *txt, float s, const Color &tint)
+		: text(txt), size(s), colour(tint) {}
+};
+
 class CInput
 {
 public:

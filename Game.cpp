@@ -128,16 +128,24 @@ void Game::sDuration()
 		if (e->cDuration)
 		{
 			int framesAlive = m_currentFrame - e->cDuration->frameCreated;
+			unsigned char fade = 0;
 			if (e->cDuration->frames < 255)
 			{
-				e->cShape->colour.a -= 255 / e->cDuration->frames;
-				e->cShape->outlineC.a -= 255 / e->cDuration->frames;
+				fade += 255 / e->cDuration->frames;
 			}
 			// if current frame is a multiple of the ceiling division of alphas max value reduce entity's alpha channel 
 			else if (framesAlive % (e->cDuration->frames / 255 + (e->cDuration->frames % 255 != 0)) == 0)
 			{
-					e->cShape->colour.a -= 1;
-					e->cShape->outlineC.a -= 1;
+				fade += 1;
+			}
+			if (e->cShape)
+			{
+				e->cShape->colour.a -= fade;
+				e->cShape->outlineC.a -= fade;
+			}
+			if (e->cLabel)
+			{
+				e->cLabel->colour.a -= fade;
 			}
 			if (framesAlive >= e->cDuration->frames)
 			{
@@ -210,18 +218,23 @@ void Game::sRender()
 	BeginDrawing();
 		ClearBackground(m_windowConfig.col);
 		// C style string fuckery
-		// TODO: add high score
 		char scoreText[28] = "SCORE: ";
 		char scoreNum[21];
 		sprintf(scoreNum, "%d", m_score);
 		strcat(scoreText, scoreNum);
 		Vector2 scorePos = (Vector2) {8, m_fontConfig.size + 2};
+		char highScoreText[33] = "HIGH SCORE: ";
+		char highScoreNum[21];
+		sprintf(highScoreNum, "%d", m_highScore);
+		strcat(highScoreText, highScoreNum);
+		Vector2 highScorePos = (Vector2) {8, m_fontConfig.size * 2 + 2};
 		char timeText[28] = "TIME: ";
 		char timeNum[21];
 		sprintf(timeNum, "%d", m_currentFrame / m_windowConfig.fps);
 		strcat(timeText, timeNum);
 		Vector2 timePos = (Vector2) {GetScreenWidth() - 8 * m_fontConfig.size,  m_fontConfig.size + 2};
 		DrawTextEx(m_fontConfig.style, scoreText, scorePos, m_fontConfig.size, 2, m_fontConfig.col);
+		DrawTextEx(m_fontConfig.style, highScoreText, highScorePos, m_fontConfig.size, 2, m_fontConfig.col);
 		DrawTextEx(m_fontConfig.style, timeText, timePos, m_fontConfig.size, 2, m_fontConfig.col);
 		for (auto e : m_entities.getEntities())
 		{
@@ -252,6 +265,10 @@ void Game::sRender()
 					// full rotation every 4 seconds
 					e->cTransform->rotation += 90.0 / (float) m_windowConfig.fps;
 				}
+				if (e->cLabel)
+				{
+					DrawTextEx(m_fontConfig.style, e->cLabel->text, e->cTransform->pos, e->cLabel->size, 2, e->cLabel->colour);
+				}
 			}
 		}
 	EndDrawing();
@@ -259,24 +276,37 @@ void Game::sRender()
 
 void Game::spawnPlayer()
 {
-	// reset
-	m_score = 0;
+	Vector2 center = (Vector2) {static_cast<float>(GetScreenWidth() / 2), static_cast<float>(GetScreenHeight() / 2)};
+	// reset game
+	const char* labelText = "";
 	auto cleanup = m_entities.getEntities();
 	if (!cleanup.empty())
 	{
+		labelText = m_labels[GetRandomValue(1, m_labels.size() - 1)];
 		for (auto e : cleanup)
 		{
 			m_entities.removeEntity(e);
 		}
 	}
+	if (m_score > m_highScore)
+	{
+		m_highScore = m_score;
+		labelText = m_labels[0];
+	}
+	m_score = 0;
 	m_currentFrame = 0;
+	// spawn message
+	auto label = m_entities.addEntity("Label");
+	label->cLabel = std::make_shared<CLabel>(labelText, m_fontConfig.size * 4, m_fontConfig.col);
+	Vector2 labelBounds = MeasureTextEx(m_fontConfig.style, label->cLabel->text,  m_fontConfig.size * 2, 2);
+	label->cTransform = std::make_shared<CTransform>((Vector2) {(center.x - labelBounds.x), (center.y - labelBounds.y)});
+	label->cDuration = std::make_shared<CDuration>(3 * m_windowConfig.fps / m_enemyConfig.spawn, m_currentFrame);
 	// create the player
 	m_player = m_entities.addEntity("Player");
 	m_player->cCollision = std::make_shared<CCollision>(m_playerConfig.c_radius);
 	m_player->cInput = std::make_shared<CInput>();
 	m_player->cShape = std::make_shared<CShape>(m_playerConfig.sides, m_playerConfig.radius, m_playerConfig.fill, m_playerConfig.o_col, m_playerConfig.o_thick);
-	Vector2 center = (Vector2) {(GetScreenWidth() / 2 - m_player->cShape->radius / 2), (GetScreenHeight() / 2 - m_player->cShape->radius / 2)};
-	m_player->cTransform = std::make_shared<CTransform>(center);
+	m_player->cTransform = std::make_shared<CTransform>((Vector2) {(center.x - m_player->cShape->radius / 2), (center.y - m_player->cShape->radius / 2)});
 	// TODO: settings in config??
 	m_player->cDash = std::make_shared<CDash>(m_windowConfig.fps / 4, 0, m_windowConfig.fps, 2.0, false);
 }

@@ -67,11 +67,13 @@ class Game
 {
 	// entities
 	EntityManager m_entities;
-	std::shared_ptr<Entity> m_player;
+	std::shared_ptr<Entity> m_player; 
 	// components
 	int m_score = 0;
+	int m_highScore = 0;
 	bool m_paused = false;
 	int m_currentFrame = 0;
+	std::vector<const char*> m_labels{"NEW HIGHSCORE!", "TRY AGAIN!!", "MY GRANDMA COULD DO BETTER", "YOU CAN DO IT!", "GIT GUD LOL", "NICE TRY!", "SO CLOSE!", "YOU GOT THIS"};
 	// configuration
 	WindowConfig m_windowConfig;
 	FontConfig m_fontConfig;
