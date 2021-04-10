@@ -288,7 +288,7 @@ void Game::spawnPlayer()
 			m_entities.removeEntity(e);
 		}
 	}
-	if (m_score > m_highScore)
+	if (m_score && m_score >= m_highScore)
 	{
 		m_highScore = m_score;
 		labelText = m_labels[0];
@@ -468,6 +468,7 @@ void Game::spawnDebris(std::shared_ptr<Entity> enemy)
 		angle += (2 * PI / enemy->cShape->sides);
 	}
 	m_score += enemy->cScore->val;
+	m_highScore = (m_score >= m_highScore) ? m_score : m_highScore;
 	m_entities.removeEntity(enemy);
 }
 
@@ -574,6 +575,7 @@ void Game::sCollision()
 			{
 				m_entities.removeEntity(enemy);
 				m_score += enemy->cScore->val;
+				m_highScore = (m_score >= m_highScore) ? m_score : m_highScore;
 			}
 			if (CheckCollisionCircles(m_player->cTransform->pos, m_player->cCollision->radius, exp->cTransform->pos, exp->cCollision->radius))
 			{
@@ -594,6 +596,7 @@ void Game::sCollision()
 				{
 					m_entities.removeEntity(debris);
 					m_score += debris->cScore->val;
+					m_highScore = (m_score >= m_highScore) ? m_score : m_highScore;
 				}
 				else
 				{
@@ -610,6 +613,7 @@ void Game::sCollision()
 				m_entities.removeEntity(bullet);
 				m_entities.removeEntity(debris);
 				m_score += debris->cScore->val;
+				m_highScore = (m_score >= m_highScore) ? m_score : m_highScore;
 			}
 		}
 		for (auto exp : m_entities.getEntities("Explosion"))
@@ -618,6 +622,7 @@ void Game::sCollision()
 			{
 				m_entities.removeEntity(debris);
 				m_score += debris->cScore->val;
+				m_highScore = (m_score >= m_highScore) ? m_score : m_highScore;
 			}
 		}
 	}
