@@ -14,6 +14,6 @@ first step is to download the precompiled files from the releases tab and extrac
 # Config
 Shape Wars uses json for it's config file. The values are described in [Game.h](https://github.com/EricBarrett/shape_wars/blob/main/Game.h)
 # Compiling
-- 1) first you must compile raylib (don't worry it's easy!). **If raylib is already installed on your system please update the path in build/makefile** which has been included as a submodule, so if you cloned the repository using the '--recursive' option it should be cloned as well under the 'include' directory. If not you may need call 'git submodule update' and/or 'git pull' to clone raylib. Instructions for compiling can be found here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
-- 2) now you can navigate to the build directory and call make
-- 3) (optional) you can also compile for the web. See https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5)#testing-raylib-game for more info
+1) First you must compile raylib (don't worry it's easy!) ***If raylib is already installed on your system please update the path in build/makefile*** which has been included as a submodule, so if you cloned the repository using the `--recursive` option it should be cloned as well under the `include` directory. If not you may need call `git submodule update` and/or `git pull` to clone raylib. Instructions for compiling can be found here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+2) Now you can navigate to the build directory and call make
+3) **(optional)** You can also compile for the web. See https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5)#testing-raylib-game for more info
