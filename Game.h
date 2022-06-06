@@ -2,7 +2,7 @@
 
 #include "Entity.h"
 #include "EntityManager.h"
-#include "include/nlohmann/json.hpp"
+#include "include/json/json.hpp"
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
