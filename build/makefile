@@ -32,7 +32,7 @@ RAYLIB_API_VERSION ?= 3
 RAYLIB_PATH        ?= ../include/raylib
 
 # Define all source files required
-PROJECT_SOURCE_FILES ?= ../main.cpp ../Game.cpp ../EntityManager.cpp ../Entity.cpp
+PROJECT_SOURCE_FILES ?= ../main.cpp ../Game.cpp ../EntityManager.cpp ../Entity.cpp ../include/NoGUI/src/GUI.cpp
 
 # Define all object files from source files
 OBJS = $(patsubst %.c, %.o, $(PROJECT_SOURCE_FILES))

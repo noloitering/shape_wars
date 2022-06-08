@@ -68,6 +68,9 @@ Game::Game(const char* config)
 #endif
 	std::cout << "loading font" << std::endl;
 	m_fontConfig.style = (readConf) ? LoadFont(m_fontConfig.file.c_str()) : GetFontDefault();
+	std::cout << "loading GUI" << std::endl;
+	NoGUI::GUIManager overlay = NoGUI::GUIManager(true);
+	overlay.getPage()->addComponents("Default", std::make_shared< NoGUI::CContainer >());
 	std::cout << "initializing Entity Manager" << std::endl;
 	m_entities = EntityManager();
 	std::cout << "spawning player" << std::endl;

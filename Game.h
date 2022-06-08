@@ -3,6 +3,7 @@
 #include "Entity.h"
 #include "EntityManager.h"
 #include "include/json/json.hpp"
+#include "include/NoGUI/src/GUI.h"
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
