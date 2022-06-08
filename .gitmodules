@@ -1,3 +1,6 @@
 [submodule "include/raylib"]
 	path = include/raylib
 	url = https://github.com/raysan5/raylib.git
+[submodule "include/NoGUI"]
+	path = include/NoGUI
+	url = https://github.com/noloitering/NoGUI.git
