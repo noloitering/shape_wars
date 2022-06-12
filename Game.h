@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Entity.h"
 #include "EntityManager.h"
-#include "include/json/json.hpp"
 #include "include/NoGUI/src/GUI.h"
+#include "include/json/json.hpp"
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
@@ -68,11 +67,13 @@ class Game
 {
 	// entities
 	EntityManager m_entities;
-	std::shared_ptr<Entity> m_player; 
+	NoGUI::GUIManager m_overlay;
+	std::shared_ptr< Texture2D > m_logo;
+	std::shared_ptr< Entity > m_player; 
 	// components
 	int m_score = 0;
 	int m_highScore = 0;
-	bool m_paused = false;
+	bool m_paused = true;
 	int m_currentFrame = 0;
 	std::vector<const char*> m_labels{"NEW HIGHSCORE!", "TRY AGAIN!!", "MY GRANDMA COULD DO BETTER", "YOU CAN DO IT!", "GIT GUD LOL", "NICE TRY!", "SO CLOSE!", "YOU GOT THIS"};
 	// configuration
@@ -93,6 +94,7 @@ class Game
 	void spawnBullet(const Vector2 mousePos);
 	void spawnSpecial();
 	void sCollision();
+	void load_menu();
 public:
 	Game(const char* config);
 	void run();

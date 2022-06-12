@@ -1,5 +1,8 @@
 #include "Game.h"
 
+Color INVISIBLE = (Color){0, 0, 0, 1};
+Color OFFGRAY = (Color){120, 120, 120, 255};
+
 Game::Game(const char* config)
 {	
 	bool readConf = FileExists(config);
@@ -69,8 +72,8 @@ Game::Game(const char* config)
 	std::cout << "loading font" << std::endl;
 	m_fontConfig.style = (readConf) ? LoadFont(m_fontConfig.file.c_str()) : GetFontDefault();
 	std::cout << "loading GUI" << std::endl;
-	NoGUI::GUIManager overlay = NoGUI::GUIManager(true);
-	overlay.getPage()->addComponents("Default", std::make_shared< NoGUI::CContainer >());
+	m_overlay = NoGUI::GUIManager();
+	load_menu();
 	std::cout << "initializing Entity Manager" << std::endl;
 	m_entities = EntityManager();
 	std::cout << "spawning player" << std::endl;
@@ -81,7 +84,7 @@ Game::Game(const char* config)
 
 void Game::run()
 {
-	if (!m_paused)
+	if ( !m_paused )
 	{
 		m_entities.update();
 		sEnemySpawner();
@@ -192,6 +195,9 @@ void Game::sInput()
 	if (IsKeyPressed(KEY_P))
 	{
 		m_paused = !(m_paused);
+		bool showGUI = !(m_overlay.getPage(0)->isActive());
+		load_menu();
+		m_overlay.getPage(0)->setActive(showGUI);
 	}
 	m_player->cInput->up = IsKeyDown(KEY_W) || IsKeyDown(KEY_UP);
 	m_player->cInput->down = IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN);
@@ -273,6 +279,12 @@ void Game::sRender()
 					DrawTextEx(m_fontConfig.style, e->cLabel->text, e->cTransform->pos, e->cLabel->size, 2, e->cLabel->colour);
 				}
 			}
+		}
+		if ( m_paused ) // TODO: draw logo with NoGUI
+		{
+			m_overlay.update();
+			m_overlay.render();
+			DrawTexture(*(m_logo.get()), m_windowConfig.width / 2 - m_logo->width / 2, 2, WHITE);
 		}
 	EndDrawing();
 }
@@ -631,7 +643,45 @@ void Game::sCollision()
 	}
 }
 
+void Game::load_menu()
+{
+	float posx = m_windowConfig.width / 2;
+	Vector2 radius = {m_windowConfig.width / 6, m_windowConfig.height / 20};
+	
+	if ( m_logo )
+	{
+		UnloadTexture(*(m_logo.get()));
+	}
+	m_overlay.clear();
+	
+	NoGUI::Style playStyle = {OFFGRAY, BLACK, (Vector2){posx, m_windowConfig.height / 2 + radius.y + 10}, radius, 4, 5, 0};
+	NoGUI::Style setStyle = {OFFGRAY, BLACK, (Vector2){posx, playStyle.pos.y + radius.y * 3}, radius, 4, 5, 0};
+	if ( FileExists("../assets/logo-720p.png") )
+	{
+		std::cout << "found logo asset!" << std::endl;
+	}
+	else
+	{
+		std::cout << "no logo asset!" << std::endl;
+	}
+	m_logo = std::make_shared< Texture2D >(LoadTexture("../assets/logo-720p.png"));
+//	NoGUI::Style logoStyle = {WHITE, INVISIBLE, (Vector2){posx, 20}, (Vector2){300, 400}, 4, 0, 0};
+	
+	std::shared_ptr< NoGUI::Page > page = std::make_shared< NoGUI::Page >();
+	page->addComponents("Label", std::make_shared< NoGUI::CContainer >());
+	page->getComponents("Label")->addComponent< NoGUI::CText >();
+	page->getComponents("Label")->getComponent< NoGUI::CText >().align = NoGUI::TextAlign::CENTER;
+//	page->addComponents("Logo", std::make_shared< NoGUI::CContainer >());
+//	page->getComponents("Logo")->addComponent< NoGUI::CImage >(texture);
+	
+	std::shared_ptr< NoGUI::Element > playButton = page->addElement< NoGUI::Button >(playStyle, "Label", "Play");
+	std::shared_ptr< NoGUI::Element > setButton = page->addElement< NoGUI::Button >(setStyle, "Label", "Settings");
+//	std::shared_ptr< NoGUI::Element > logo = page->addElement< NoGUI::Element >(logoStyle, "Logo", "");
+	m_overlay.addPage(page);
+}
+
 void Game::cleanup()
 {
 	UnloadFont(m_fontConfig.style); // we use smart pointers for everything else
+	UnloadTexture(*(m_logo.get()));
 }
