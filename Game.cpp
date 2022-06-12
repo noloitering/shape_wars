@@ -194,10 +194,7 @@ void Game::sInput()
 {
 	if (IsKeyPressed(KEY_P))
 	{
-		m_paused = !(m_paused);
-		bool showGUI = !(m_overlay.getPage(0)->isActive());
-		load_menu();
-		m_overlay.getPage(0)->setActive(showGUI);
+		togglePause();
 	}
 	m_player->cInput->up = IsKeyDown(KEY_W) || IsKeyDown(KEY_UP);
 	m_player->cInput->down = IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN);
@@ -678,6 +675,30 @@ void Game::load_menu()
 	std::shared_ptr< NoGUI::Element > setButton = page->addElement< NoGUI::Button >(setStyle, "Label", "Settings");
 //	std::shared_ptr< NoGUI::Element > logo = page->addElement< NoGUI::Element >(logoStyle, "Logo", "");
 	m_overlay.addPage(page);
+}
+
+bool Game::togglePause()
+{
+	m_paused = !(m_paused);
+	if ( m_overlay.getPage(0) )
+	{
+		bool showGUI = !(m_overlay.getPage(0)->isActive());
+		load_menu();
+		m_overlay.getPage(0)->setActive(showGUI);
+	}
+	
+	return m_paused;
+}
+
+void Game::setPause(bool p)
+{
+	m_paused = p;
+	if ( m_overlay.getPage(0) )
+	{
+		bool showGUI = !(m_overlay.getPage(0)->isActive());
+		load_menu();
+		m_overlay.getPage(0)->setActive(p);
+	}
 }
 
 void Game::cleanup()

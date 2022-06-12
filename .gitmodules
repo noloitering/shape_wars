@@ -4,3 +4,4 @@
 [submodule "include/NoGUI"]
 	path = include/NoGUI
 	url = https://github.com/noloitering/NoGUI.git
+	branch = production

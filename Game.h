@@ -99,4 +99,6 @@ public:
 	Game(const char* config);
 	void run();
 	void cleanup();
+	void setPause(bool p=true);
+	bool togglePause();
 };
