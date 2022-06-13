@@ -63,6 +63,28 @@ struct BulletConfig
 	float speed = 1100; // pixels/second
 };
 
+// custom configuration
+const std::map< std::string, Vector2 > map169 = {
+	{"3840 x 2160 UHD", (Vector2){3840, 2160}},
+	{"2560 x 1440 HD", (Vector2){2560, 1440}},
+	{"1920 x 1080 HD", (Vector2){1920, 1080}},
+	{"1280 x 720 HD", (Vector2){1280, 720}},
+	{" 854 x 480 SD", (Vector2){854, 480}},
+	{" 640 x 360 SD", (Vector2){640, 360}},
+	{" 426 x 240 LD", (Vector2){426, 240}},
+};
+
+const std::map< std::string, int > mapFPS = {
+	{"144fps UHD Gaming", 144},
+	{"120fps UHD Gaming", 120},
+	{" 90fps HD Gaming", 90},
+	{" 72fps UHD Cinema", 72},
+	{" 60fps HD Gaming", 60},
+	{" 48fps HD Cinema", 48},
+	{" 30fps SD Gaming", 30},
+	{" 24fps SD Cinema", 24}
+};
+
 class Game
 {
 	// entities
@@ -95,6 +117,7 @@ class Game
 	void spawnSpecial();
 	void sCollision();
 	void load_menu();
+	void load_settings();
 public:
 	Game(const char* config);
 	void run();

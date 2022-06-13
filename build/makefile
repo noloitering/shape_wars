@@ -286,9 +286,9 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
         # resource file contains windows executable icon and properties
         LDFLAGS += $(RAYLIB_PATH)/src/raylib.rc.data 
         # -Wl,--subsystem,windows hides the console window
-        ifeq ($(BUILD_MODE), RELEASE)
-            LDFLAGS += -Wl,--subsystem,windows
-        endif
+#        ifeq ($(BUILD_MODE), RELEASE)
+#            LDFLAGS += -Wl,--subsystem,windows
+#        endif
     endif
     ifeq ($(PLATFORM_OS),BSD)
         # Consider -L$(RAYLIB_INSTALL_PATH)

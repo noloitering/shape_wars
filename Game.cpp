@@ -74,6 +74,8 @@ Game::Game(const char* config)
 	std::cout << "loading GUI" << std::endl;
 	m_overlay = NoGUI::GUIManager();
 	load_menu();
+	load_settings();
+	m_overlay.getPage(1)->setActive(false);
 	std::cout << "initializing Entity Manager" << std::endl;
 	m_entities = EntityManager();
 	std::cout << "spawning player" << std::endl;
@@ -192,9 +194,15 @@ void Game::sEnemySpawner()
 
 void Game::sInput()
 {
-	if (IsKeyPressed(KEY_P))
+	if ( IsKeyPressed(KEY_P) || m_overlay.getPage()->getElement(0)->getFocus() )
 	{
+		m_overlay.getPage()->getElement(0)->setFocus(false);
 		togglePause();
+	}
+	if ( m_overlay.getPage()->getElement(1)->getFocus() )
+	{
+		m_overlay.getPage()->getElement(1)->setFocus(false);
+		setPause(true);
 	}
 	m_player->cInput->up = IsKeyDown(KEY_W) || IsKeyDown(KEY_UP);
 	m_player->cInput->down = IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN);
@@ -203,19 +211,22 @@ void Game::sInput()
 	m_player->cInput->dash = IsKeyDown(KEY_SPACE);
 	m_player->cInput->shoot = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
 	m_player->cInput->special = IsMouseButtonDown(MOUSE_RIGHT_BUTTON);
-	if (m_player->cInput->shoot && !m_paused && m_entities.getEntities("Bullet").empty())
+	if ( !m_paused )
 	{
-		spawnBullet(GetMousePosition());
-	}
-	if (m_player->cInput->special && !m_paused)
-	{
-		spawnSpecial();
-	}
-	if (m_player->cInput->dash && !m_paused && !(m_player->cDash->active) && m_currentFrame >= m_player->cDash->frameStarted + m_player->cDash->frames + m_player->cDash->delay)
-	{
-		std::cout << "Dashing!" << std::endl;
-		m_player->cDash->active = true;
-		m_player->cDash->frameStarted = m_currentFrame;
+		if (m_player->cInput->shoot && m_entities.getEntities("Bullet").empty())
+		{
+			spawnBullet(GetMousePosition());
+		}
+		if (m_player->cInput->special)
+		{
+			spawnSpecial();
+		}
+		if (m_player->cInput->dash && !(m_player->cDash->active) && m_currentFrame >= m_player->cDash->frameStarted + m_player->cDash->frames + m_player->cDash->delay)
+		{
+			std::cout << "Dashing!" << std::endl;
+			m_player->cDash->active = true;
+			m_player->cDash->frameStarted = m_currentFrame;
+		}
 	}
 }
 
@@ -277,11 +288,11 @@ void Game::sRender()
 				}
 			}
 		}
-		if ( m_paused ) // TODO: draw logo with NoGUI
+		if ( m_paused )
 		{
 			m_overlay.update();
 			m_overlay.render();
-			DrawTexture(*(m_logo.get()), m_windowConfig.width / 2 - m_logo->width / 2, 2, WHITE);
+			DrawTexture(*(m_logo.get()), m_windowConfig.width / 2 - m_logo->width / 2, 2, WHITE); // TODO: draw logo with NoGUI
 		}
 	EndDrawing();
 }
@@ -675,30 +686,47 @@ void Game::load_menu()
 	std::shared_ptr< NoGUI::Element > setButton = page->addElement< NoGUI::Button >(setStyle, "Label", "Settings");
 //	std::shared_ptr< NoGUI::Element > logo = page->addElement< NoGUI::Element >(logoStyle, "Logo", "");
 	m_overlay.addPage(page);
+	m_overlay.update();
+}
+
+void Game::load_settings()
+{
+	float posx = m_windowConfig.width / 1.5;
+	Vector2 radius = {m_windowConfig.width / 6, m_windowConfig.height / 20};
+	
+	NoGUI::Style resStyle = {INVISIBLE, WHITE, (Vector2){posx, m_windowConfig.height / 2}, radius, 4, 5, 0};
+	
+	std::shared_ptr< NoGUI::Page > spage = m_overlay.addPage();
+	spage->addComponents("Label", std::make_shared< NoGUI::CContainer >());
+	spage->getComponents("Label")->addComponent< NoGUI::CText >();
+	spage->getComponents("Label")->getComponent< NoGUI::CText >().align = NoGUI::TextAlign::CENTER;
+	
+	std::shared_ptr< NoGUI::Element > resDrop = spage->addElement< NoGUI::Input >(resStyle, "Label", "1280 x 720 HD");
+	std::shared_ptr< NoGUI::DropDown > resDown = m_overlay.addDropDown(resDrop, NoGUI::TextWrap::DOWN);
+	resDown->addComponents("Option", std::make_shared< NoGUI::CContainer >());
+	resDown->getComponents("Option")->addComponent< NoGUI::CText >();
+	resDown->getComponents("Option")->getComponent< NoGUI::CText >().align = NoGUI::TextAlign::CENTER;
+	for (auto i = map169.rbegin(); i != map169.rend(); ++i)
+	{
+		resDown->addElement< NoGUI::Button >("Option", i->first);
+	}
+	
+	m_overlay.addPage(spage);
+	m_overlay.update();
 }
 
 bool Game::togglePause()
 {
-	m_paused = !(m_paused);
-	if ( m_overlay.getPage(0) )
-	{
-		bool showGUI = !(m_overlay.getPage(0)->isActive());
-		load_menu();
-		m_overlay.getPage(0)->setActive(showGUI);
-	}
+	setPause(!(m_paused));
 	
 	return m_paused;
 }
 
 void Game::setPause(bool p)
 {
+	m_overlay.getPage(0)->setActive(false);
 	m_paused = p;
-	if ( m_overlay.getPage(0) )
-	{
-		bool showGUI = !(m_overlay.getPage(0)->isActive());
-		load_menu();
-		m_overlay.getPage(0)->setActive(p);
-	}
+	m_overlay.getPage(1)->setActive(m_paused);
 }
 
 void Game::cleanup()
