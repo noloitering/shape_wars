@@ -36,6 +36,14 @@ void EntityManager::removeEntity(std::shared_ptr<Entity> entity)
 	entity->destroy();
 }
 
+void EntityManager::clear()
+{
+	m_entities.clear();
+	m_toAdd.clear();
+	m_entityMap.clear();
+	m_totalEntities = 0;
+}
+
 std::shared_ptr<Entity> EntityManager::addEntity(const std::string & tag)
 {
 	auto e = std::shared_ptr<Entity>(new Entity(m_totalEntities++, tag));

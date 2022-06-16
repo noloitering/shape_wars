@@ -1,87 +1,206 @@
 #include "Game.h"
 
-Color INVISIBLE = (Color){0, 0, 0, 1};
-Color OFFGRAY = (Color){120, 120, 120, 255};
-
-Game::Game(const char* config)
-{	
-	bool readConf = FileExists(config);
-	if (readConf)
+bool parse_config(GameConfig& config, const char* file)
+{
+	if ( FileExists(file) )
 	{
-		// read a JSON file
-		std::cout << "parsing config file" << std::endl;
-		std::ifstream input(config);
+		std::ifstream input(file);
 		nlohmann::json j_settings;
 		input >> j_settings;
-		//Window
-		m_windowConfig.width = j_settings["Window"][0];
-		m_windowConfig.height = j_settings["Window"][1];
-		m_windowConfig.fps = j_settings["Window"][2];
-		m_windowConfig.full = j_settings["Fullscreen"];
-		m_windowConfig.col = (Color) {j_settings["Background"][0], j_settings["Background"][1], j_settings["Background"][2], 255};
-		// Font
-		m_fontConfig.file = j_settings["Font"][0];
-		m_fontConfig.size = j_settings["Font"][1];
-		m_fontConfig.col = (Color) {j_settings["Font"][2], j_settings["Font"][3], j_settings["Font"][4], 255};
-		// Player
-		m_playerConfig.sides = j_settings["Player"]["Sides"];
-		m_playerConfig.radius = j_settings["Player"]["Size"];
-		m_playerConfig.c_radius = j_settings["Player"]["Collision"];
-		m_playerConfig.speed = j_settings["Player"]["Speed"];
-		m_playerConfig.fill = (Color) {j_settings["Player"]["Colour"][0], j_settings["Player"]["Colour"][1], j_settings["Player"]["Colour"][2], 255};
-		m_playerConfig.o_col = (Color) {j_settings["Player"]["Outline"][0], j_settings["Player"]["Outline"][1], j_settings["Player"]["Outline"][2], 255};
-		m_playerConfig.o_thick = j_settings["Player"]["Outline"][3];
-		// Enemy
-		m_enemyConfig.radius = j_settings["Enemy"]["Size"];
-		m_enemyConfig.c_radius = j_settings["Enemy"]["Collision"];
-		m_enemyConfig.speed = j_settings["Enemy"]["Speed"];
-		m_enemyConfig.o_col = (Color) {j_settings["Enemy"]["Outline"][0], j_settings["Enemy"]["Outline"][1], j_settings["Enemy"]["Outline"][2], 255};
-		m_enemyConfig.o_thick = j_settings["Enemy"]["Outline"][3];
-		m_enemyConfig.d_life = j_settings["Enemy"]["DebrisLife"];
-		m_enemyConfig.d_life = m_enemyConfig.d_life * m_windowConfig.fps / 1000;
-		m_enemyConfig.spawn = j_settings["Enemy"]["Spawn"];
-		// Bullets
-		m_bulletConfig.radius = j_settings["Bullet"]["Size"];
-		m_bulletConfig.c_radius = j_settings["Bullet"]["Collision"];
-		m_bulletConfig.speed = j_settings["Bullet"]["Speed"];
-		unsigned char bulletRed = 255 - m_windowConfig.col.r;
-		unsigned char bulletGreen = 255 - m_windowConfig.col.g;
-		unsigned char bulletBlue = 255 - m_windowConfig.col.b;
-		m_bulletConfig.col = (Color) {bulletRed, bulletGreen, bulletBlue, 255};
-		m_bulletConfig.o_col = (Color) {j_settings["Bullet"]["Outline"][0], j_settings["Bullet"]["Outline"][1], j_settings["Bullet"]["Outline"][2], 255};
-		m_bulletConfig.o_thick = j_settings["Bullet"]["Outline"][3];
-		m_bulletConfig.duration = j_settings["Bullet"]["Duration"];
-		m_bulletConfig.duration = m_bulletConfig.duration * m_windowConfig.fps / 1000;
+		parse_window(config.window, j_settings);
+		parse_font(config.font, j_settings);
+		parse_player(config.player, j_settings);
+		parse_enemy(config.enemy, j_settings);
+		parse_bullet(config.bullet, j_settings);
+		
+		return true;
 	}
 	else
 	{
-		std::cout << "Could not read config file" << std::endl;
+		
+		return false;
 	}
-	std::cout << "initializing window" << std::endl;
-	InitWindow(m_windowConfig.width, m_windowConfig.height, "Shape Wars");
-    // following lines are for PLATFORM_DESKTOP only.
-#if defined(PLATFORM_DESKTOP)
-	std::cout << "setting FPS" << std::endl;
-	SetTargetFPS(m_windowConfig.fps);
-	if (m_windowConfig.full)
+}
+
+void parse_window(WindowConfig& config, const nlohmann::json& json)
+{
+	//Window
+	config.width = json["Window"][0];
+	config.height = json["Window"][1];
+	config.fps = json["Window"][2];
+	config.full = json["Fullscreen"];
+	config.col = (Color) {json["Background"][0], json["Background"][1], json["Background"][2], 255};
+}
+
+void parse_font(FontConfig& config, const nlohmann::json& json)
+{
+	config.file = json["Font"][0];
+	config.size = json["Font"][1];
+	config.col = (Color) {json["Font"][2], json["Font"][3], json["Font"][4], 255};
+}
+
+void parse_player(PlayerConfig& config, const nlohmann::json& json)
+{
+	config.sides = json["Player"]["Sides"];
+	config.radius = json["Player"]["Size"];
+	config.c_radius = json["Player"]["Collision"];
+	config.speed = json["Player"]["Speed"];
+	config.fill = (Color) {json["Player"]["Colour"][0], json["Player"]["Colour"][1], json["Player"]["Colour"][2], 255};
+	config.o_col = (Color) {json["Player"]["Outline"][0], json["Player"]["Outline"][1], json["Player"]["Outline"][2], 255};
+	config.o_thick = json["Player"]["Outline"][3];
+}
+
+void parse_enemy(EnemyConfig& config, const nlohmann::json& json)
+{
+	config.radius = json["Enemy"]["Size"];
+	config.c_radius = json["Enemy"]["Collision"];
+	config.speed = json["Enemy"]["Speed"];
+	config.o_col = (Color) {json["Enemy"]["Outline"][0], json["Enemy"]["Outline"][1], json["Enemy"]["Outline"][2], 255};
+	config.o_thick = json["Enemy"]["Outline"][3];
+	config.d_life = json["Enemy"]["DebrisLife"];
+	int fps = json["Window"][2];
+	config.d_life = config.d_life * fps / 1000;
+	config.spawn = json["Enemy"]["Spawn"];
+}
+
+void parse_bullet(BulletConfig& config, const nlohmann::json& json)
+{
+	config.radius = json["Bullet"]["Size"];
+	config.c_radius = json["Bullet"]["Collision"];
+	config.speed = json["Bullet"]["Speed"];
+	unsigned char backRed = json["Background"][0];
+	unsigned char backGreen = json["Background"][1];
+	unsigned char backBlue = json["Background"][2];
+	unsigned char bulletRed = 255 - backRed;
+	unsigned char bulletGreen = 255 - backGreen;
+	unsigned char bulletBlue = 255 - backBlue;
+	config.col = (Color) {bulletRed, bulletGreen, bulletBlue, 255};
+	config.o_col = (Color) {json["Bullet"]["Outline"][0], json["Bullet"]["Outline"][1], json["Bullet"]["Outline"][2], 255};
+	config.o_thick = json["Bullet"]["Outline"][3];
+	config.duration = json["Bullet"]["Duration"];
+	int fps = json["Window"][2];
+	config.duration = config.duration * fps / 1000;
+}
+
+int Background::addCol(const Color& col)
+{
+	colours.push_back(col);
+	
+	return colours.size();
+}
+
+void Background::setCol(const std::vector< Color >& col)
+{
+	colours = col;
+}
+
+int Background::removeCol(int index)
+{
+	colours.erase(colours.begin() + index);
+	
+	return colours.size();
+}
+
+void Background::step()
+{
+	if ( colours.size() > 1 )
 	{
-		std::cout << "setting Fullscreen" << std::endl;
-		ToggleFullscreen();
+		int next;
+		if ( index + 1 > colours.size() - 1 )
+		{
+			next = 0;
+		}
+		else
+		{
+			next = index + 1;
+		}
+		int framesRem = (hframes + tframes) - (frames % (tframes + hframes));
+		if ( framesRem <= tframes ) // transition
+		{
+			Color nextCol = colours.at(next);
+			int diffr = (currCol.r - nextCol.r);
+			int diffg = (currCol.g - nextCol.g);
+			int diffb = (currCol.b - nextCol.b);
+			int redInc = (double)diffr / framesRem;
+			int greenInc = (double)diffg / framesRem;
+			int blueInc = (double)diffb / framesRem;
+			currCol.r -= redInc;
+			currCol.g -= greenInc;
+			currCol.b -= blueInc;
+//			std::cout << framesRem << std::endl;
+//			std::cout << "rgba: {" << (int)currCol.r << ", " << (int)currCol.g << ", " << (int)currCol.b << "}" << std::endl;
+//			std::cout << "dest rgba: {" << (int)nextCol.r << ", " << (int)nextCol.g << ", " << (int)nextCol.b << "}" << std::endl;
+//			std::cout << "dest index: " << next << std::endl;
+//			std::cout << "rgba diff: {" << diffr << ", " << diffg << ", " << diffb << "}" << std::endl;
+//			std::cout << "rgba step: {" << redInc << ", " << greenInc << ", " << blueInc << "}" << std::endl;
+			if ( framesRem == 1 )
+			{
+				index = next;
+			}
+		}
 	}
-#endif
-	std::cout << "loading font" << std::endl;
-	m_fontConfig.style = (readConf) ? LoadFont(m_fontConfig.file.c_str()) : GetFontDefault();
-	std::cout << "loading GUI" << std::endl;
-	m_overlay = NoGUI::GUIManager();
-	load_menu();
-	load_settings();
-	m_overlay.getPage(1)->setActive(false);
-	std::cout << "initializing Entity Manager" << std::endl;
-	m_entities = EntityManager();
-	std::cout << "spawning player" << std::endl;
-	spawnPlayer();
-	std::cout << "seeding RNG" << std::endl;
-	srand( (unsigned)time(NULL) );
+	entities.update();
+	for (auto e : entities.getEntities())
+	{
+		if (e->cDuration)
+		{
+			int framesAlive = frames - e->cDuration->frameCreated;
+			unsigned char fade = 0;
+			if (e->cDuration->frames < 255)
+			{
+				fade += 255 / e->cDuration->frames;
+			}
+			// if current frame is a multiple of the ceiling division of alphas max value reduce entity's alpha channel 
+			else if (framesAlive % (e->cDuration->frames / 255 + (e->cDuration->frames % 255 != 0)) == 0)
+			{
+				fade += 1;
+			}
+			if (e->cShape)
+			{
+				e->cShape->colour.a -= fade;
+				e->cShape->outlineC.a -= fade;
+			}
+			if (framesAlive >= e->cDuration->frames)
+			{
+				std::cout << "despawning " << e->tag() << " " << e->id() << std::endl;
+				entities.removeEntity(e); // is buffered so it won't invalidate our iterator
+			}
+		}
+	}
+	frames++;
+}
+
+void Background::draw()
+{
+	ClearBackground(currCol);
+}
+
+void Background::spawner()
+{
+	// spawn based on difficulty
+	size_t spawnRate = 45 - 15 * (enemyConfig.spawn - 1);
+	if ( frames % spawnRate == 0)
+	{
+		std::cout << "Spawning Background Enemy" << std::endl;
+		spawnEntity();
+	}
+}
+
+void Background::spawnEntity()
+{
+	auto enemy = entities.addEntity("Enemy");
+	float diameter = enemyConfig.radius * 2;
+	Color fill = (Color) {static_cast<unsigned char>(GetRandomValue(0, 255)), static_cast<unsigned char>(GetRandomValue(0, 255)), static_cast<unsigned char>(GetRandomValue(0, 255)), 255};
+	float posX = GetRandomValue(diameter, (GetScreenWidth() - diameter));
+	float posY = GetRandomValue(diameter, (GetScreenHeight() - diameter));
+	Vector2 pos = (Vector2) {posX, posY};
+	float randNum1 = static_cast <float> (rand());
+	float randNum2 = static_cast <float> (rand());
+	float divisor = static_cast <float> (RAND_MAX/ (enemyConfig.speed * 2));
+	Vector2 vel = (Vector2){randNum1 / divisor - enemyConfig.speed, randNum2 / divisor - enemyConfig.speed};
+	enemy->cTransform = std::make_shared<CTransform>(pos, vel);
+	enemy->cShape = std::make_shared<CShape>(GetRandomValue(3, 8), enemyConfig.radius, fill, enemyConfig.o_col, enemyConfig.o_thick);
+	enemy->cDuration = std::make_shared< CDuration >(enemyConfig.d_life, frames);
 }
 
 void Game::run()
@@ -106,20 +225,20 @@ void Game::sMove()
 	// Up/Down
 	if (m_player->cInput->up && !m_player->cInput->down)
 	{
-		m_player->cTransform->velocity.y = -1 * m_playerConfig.speed;
+		m_player->cTransform->velocity.y = -1 * config.player.speed;
 	}
 	if (m_player->cInput->down && !m_player->cInput->up)
 	{
-		m_player->cTransform->velocity.y = m_playerConfig.speed;
+		m_player->cTransform->velocity.y = config.player.speed;
 	}
 	// Left/Right
 	if (m_player->cInput->left && !m_player->cInput->right)
 	{
-		m_player->cTransform->velocity.x = -1 * m_playerConfig.speed;
+		m_player->cTransform->velocity.x = -1 * config.player.speed;
 	}
 	if (m_player->cInput->right && !m_player->cInput->left)
 	{
-		m_player->cTransform->velocity.x = m_playerConfig.speed;
+		m_player->cTransform->velocity.x = config.player.speed;
 	}
 	// Diagonal
 	if (m_player->cTransform->velocity.x != 0 && m_player->cTransform->velocity.y != 0)
@@ -162,9 +281,9 @@ void Game::sDuration()
 				{
 					auto exp = m_entities.addEntity("Explosion");
 					exp->cTransform = std::make_shared<CTransform>(e->cTransform->pos);
-					exp->cShape = std::make_shared<CShape>(12, m_enemyConfig.radius * 5, (Color) {255, 75, 10, 255}, m_bulletConfig.o_col, 0);
-					exp->cCollision = std::make_shared<CCollision>(m_enemyConfig.radius * 5);
-					exp->cDuration = std::make_shared<CDuration>(m_windowConfig.fps / 2, m_currentFrame);
+					exp->cShape = std::make_shared<CShape>(12, config.enemy.radius * 5, (Color) {255, 75, 10, 255}, config.bullet.o_col, 0);
+					exp->cCollision = std::make_shared<CCollision>(config.enemy.radius * 5);
+					exp->cDuration = std::make_shared<CDuration>(config.window.fps / 2, m_currentFrame);
 				}
 			}
 		}
@@ -183,9 +302,9 @@ void Game::sEnemySpawner()
 {
 	// increase spawn rate by .5 second every 30 secs with a max spawnrate of .1 second and a base spawnrate of 3 / config value seconds
 	// TODO: add these settings in config??
-	int spawnRate = 3000 - 500 * (m_currentFrame / m_windowConfig.fps / 30);
+	int spawnRate = 3000 - 500 * (m_currentFrame / config.window.fps / 30);
 	int maxRate = 100;
-	if ( int(m_currentFrame * 1000 * m_enemyConfig.spawn / m_windowConfig.fps) % ((spawnRate > maxRate) ? spawnRate : maxRate) == 0)
+	if ( int(m_currentFrame * 1000 * config.enemy.spawn / config.window.fps) % ((spawnRate > maxRate) ? spawnRate : maxRate) == 0)
 	{
 		std::cout << "Spawning Enemy" << std::endl;
 		spawnEnemy();
@@ -197,6 +316,7 @@ void Game::sInput()
 	if ( IsKeyPressed(KEY_P) || m_overlay.getPage()->getElement(0)->getFocus() )
 	{
 		m_overlay.getPage()->getElement(0)->setFocus(false);
+		back.entities.clear();
 		togglePause();
 	}
 	if ( m_overlay.getPage()->getElement(1)->getFocus() )
@@ -233,34 +353,59 @@ void Game::sInput()
 void Game::sRender()
 {
 	BeginDrawing();
-		ClearBackground(m_windowConfig.col);
+		if ( m_overlay.getPage(0)->isActive() )
+		{
+			back.step();
+			back.spawner();
+			for (auto e : back.entities.getEntities())
+			{
+				if (e->cTransform)
+				{
+					float posUpdateX = e->cTransform->velocity.x * (1.0f / (float)(config.window.fps));
+					float posUpdateY = e->cTransform->velocity.y * (1.0f / (float)(config.window.fps));
+					e->cTransform->pos.x += posUpdateX;
+					e->cTransform->pos.y += posUpdateY;
+				}
+				if (e->cShape)
+				{
+					DrawPoly(e->cTransform->pos, e->cShape->sides, e->cShape->radius, e->cTransform->rotation, e->cShape->colour);
+					for (int i = 0; i < e->cShape->outlineW; i++)
+					{
+						DrawPolyLines(e->cTransform->pos, e->cShape->sides, e->cShape->radius + i, e->cTransform->rotation, e->cShape->outlineC);
+					}
+					// full rotation every 4 seconds
+					e->cTransform->rotation += 90.0 / (float) config.window.fps;
+				}
+			}
+		}
+		back.draw();
 		// C style string fuckery
 		char scoreText[28] = "SCORE: ";
 		char scoreNum[21];
 		sprintf(scoreNum, "%d", m_score);
 		strcat(scoreText, scoreNum);
-		Vector2 scorePos = (Vector2) {8, m_fontConfig.size + 2};
+		Vector2 scorePos = (Vector2) {8, config.font.size + 2};
 		char highScoreText[33] = "HIGH SCORE: ";
 		char highScoreNum[21];
 		sprintf(highScoreNum, "%d", m_highScore);
 		strcat(highScoreText, highScoreNum);
-		Vector2 highScorePos = (Vector2) {8, m_fontConfig.size * 2 + 2};
+		Vector2 highScorePos = (Vector2) {8, config.font.size * 2 + 2};
 		char timeText[28] = "TIME: ";
 		char timeNum[21];
-		sprintf(timeNum, "%d", m_currentFrame / m_windowConfig.fps);
+		sprintf(timeNum, "%d", m_currentFrame / config.window.fps);
 		strcat(timeText, timeNum);
-		Vector2 timePos = (Vector2) {GetScreenWidth() - 8 * m_fontConfig.size,  m_fontConfig.size + 2};
-		DrawTextEx(m_fontConfig.style, scoreText, scorePos, m_fontConfig.size, 2, m_fontConfig.col);
-		DrawTextEx(m_fontConfig.style, highScoreText, highScorePos, m_fontConfig.size, 2, m_fontConfig.col);
-		DrawTextEx(m_fontConfig.style, timeText, timePos, m_fontConfig.size, 2, m_fontConfig.col);
+		Vector2 timePos = (Vector2) {GetScreenWidth() - 8 * config.font.size,  config.font.size + 2};
+		DrawTextEx(config.font.style, scoreText, scorePos, config.font.size, 2, config.font.col);
+		DrawTextEx(config.font.style, highScoreText, highScorePos, config.font.size, 2, config.font.col);
+		DrawTextEx(config.font.style, timeText, timePos, config.font.size, 2, config.font.col);
 		for (auto e : m_entities.getEntities())
 		{
 			if (e->cTransform)
 			{
 				if (!m_paused)
 				{
-					float posUpdateX = e->cTransform->velocity.x * (1.0f / (float)(m_windowConfig.fps));
-					float posUpdateY = e->cTransform->velocity.y * (1.0f / (float)(m_windowConfig.fps));
+					float posUpdateX = e->cTransform->velocity.x * (1.0f / (float)(config.window.fps));
+					float posUpdateY = e->cTransform->velocity.y * (1.0f / (float)(config.window.fps));
 					if (e->cDash)
 					{
 						if (e->cDash->active)
@@ -280,11 +425,11 @@ void Game::sRender()
 						DrawPolyLines(e->cTransform->pos, e->cShape->sides, e->cShape->radius + i, e->cTransform->rotation, e->cShape->outlineC);
 					}
 					// full rotation every 4 seconds
-					e->cTransform->rotation += 90.0 / (float) m_windowConfig.fps;
+					e->cTransform->rotation += 90.0 / (float) config.window.fps;
 				}
 				if (e->cLabel)
 				{
-					DrawTextEx(m_fontConfig.style, e->cLabel->text, e->cTransform->pos, e->cLabel->size, 2, e->cLabel->colour);
+					DrawTextEx(config.font.style, e->cLabel->text, e->cTransform->pos, e->cLabel->size, 2, e->cLabel->colour);
 				}
 			}
 		}
@@ -292,7 +437,7 @@ void Game::sRender()
 		{
 			m_overlay.update();
 			m_overlay.render();
-			DrawTexture(*(m_logo.get()), m_windowConfig.width / 2 - m_logo->width / 2, 2, WHITE); // TODO: draw logo with NoGUI
+			DrawTexture(*(m_logo.get()), config.window.width / 2 - m_logo->width / 2, 2, WHITE); // TODO: draw logo with NoGUI
 		}
 	EndDrawing();
 }
@@ -320,24 +465,24 @@ void Game::spawnPlayer()
 	m_currentFrame = 0;
 	// spawn message
 	auto label = m_entities.addEntity("Label");
-	label->cLabel = std::make_shared<CLabel>(labelText, m_fontConfig.size * 4, m_fontConfig.col);
-	Vector2 labelBounds = MeasureTextEx(m_fontConfig.style, label->cLabel->text,  m_fontConfig.size * 2, 2);
+	label->cLabel = std::make_shared<CLabel>(labelText, config.font.size * 4, config.font.col);
+	Vector2 labelBounds = MeasureTextEx(config.font.style, label->cLabel->text,  config.font.size * 2, 2);
 	label->cTransform = std::make_shared<CTransform>((Vector2) {(center.x - labelBounds.x), (center.y - labelBounds.y)});
-	label->cDuration = std::make_shared<CDuration>(3 * m_windowConfig.fps / m_enemyConfig.spawn, m_currentFrame);
+	label->cDuration = std::make_shared<CDuration>(3 * config.window.fps / config.enemy.spawn, m_currentFrame);
 	// create the player
 	m_player = m_entities.addEntity("Player");
-	m_player->cCollision = std::make_shared<CCollision>(m_playerConfig.c_radius);
+	m_player->cCollision = std::make_shared<CCollision>(config.player.c_radius);
 	m_player->cInput = std::make_shared<CInput>();
-	m_player->cShape = std::make_shared<CShape>(m_playerConfig.sides, m_playerConfig.radius, m_playerConfig.fill, m_playerConfig.o_col, m_playerConfig.o_thick);
+	m_player->cShape = std::make_shared<CShape>(config.player.sides, config.player.radius, config.player.fill, config.player.o_col, config.player.o_thick);
 	m_player->cTransform = std::make_shared<CTransform>((Vector2) {(center.x - m_player->cShape->radius / 2), (center.y - m_player->cShape->radius / 2)});
 	// TODO: settings in config??
-	m_player->cDash = std::make_shared<CDash>(m_windowConfig.fps / 4, 0, m_windowConfig.fps, 2.0, false);
+	m_player->cDash = std::make_shared<CDash>(config.window.fps / 4, 0, config.window.fps, 2.0, false);
 }
 
 void Game::spawnEnemy()
 {
 	auto enemy = m_entities.addEntity("Enemy");
-	float diameter = m_enemyConfig.radius * 2;
+	float diameter = config.enemy.radius * 2;
 	int colourDiff = 0;
 	// ensure colour of enemy differs from background or player
 	Color fill = (Color) {static_cast<unsigned char>(GetRandomValue(0, 255)), static_cast<unsigned char>(GetRandomValue(0, 255)), static_cast<unsigned char>(GetRandomValue(0, 255)), 255};
@@ -382,9 +527,9 @@ void Game::spawnEnemy()
 		}
 	}
 	colourDiff = 0;
-	colourDiff += abs(fill.r - m_windowConfig.col.r);
-	colourDiff += abs(fill.g - m_windowConfig.col.g);
-	colourDiff += abs(fill.b - m_windowConfig.col.b);
+	colourDiff += abs(fill.r - config.window.col.r);
+	colourDiff += abs(fill.g - config.window.col.g);
+	colourDiff += abs(fill.b - config.window.col.b);
 	if (colourDiff < 90)
 	{
 		// add 90 from the lowest value
@@ -429,7 +574,11 @@ void Game::spawnEnemy()
 	int playerRight = m_player->cTransform->pos.x + m_player->cShape->radius * 2;
 	int playerTop = m_player->cTransform->pos.y - m_player->cShape->radius * 2;
 	int playerBot = m_player->cTransform->pos.y + m_player->cShape->radius * 2;
-	Vector2 vel = (Vector2) {static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/m_enemyConfig.speed)), static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/m_enemyConfig.speed))};
+	float randNum1 = static_cast <float> (rand());
+	float randNum2 = static_cast <float> (rand());
+	float divisor = static_cast <float> (RAND_MAX/ (config.enemy.speed * 2));
+	Vector2 vel = (Vector2){randNum1 / divisor - config.enemy.speed, randNum2 / divisor - config.enemy.speed};
+	//Vector2 vel = (Vector2) {static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/config.enemy.speed)), static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/config.enemy.speed))};
 	// ensure the enemy doesn't spawn too close to the player
 	if ((pos.x - playerLeft) <= (playerRight - playerLeft))
 	{
@@ -470,8 +619,8 @@ void Game::spawnEnemy()
 		}
 	}
 	enemy->cTransform = std::make_shared<CTransform>(pos, vel);
-	enemy->cShape = std::make_shared<CShape>(GetRandomValue(3, 8), m_enemyConfig.radius, fill, m_enemyConfig.o_col, m_enemyConfig.o_thick);
-	enemy->cCollision =  std::make_shared<CCollision>(m_enemyConfig.c_radius);
+	enemy->cShape = std::make_shared<CShape>(GetRandomValue(3, 8), config.enemy.radius, fill, config.enemy.o_col, config.enemy.o_thick);
+	enemy->cCollision =  std::make_shared<CCollision>(config.enemy.c_radius);
 	enemy->cScore = std::make_shared<CScore>(100 * enemy->cShape->sides);
 }
 
@@ -485,9 +634,9 @@ void Game::spawnDebris(std::shared_ptr<Entity> enemy)
 		auto e = m_entities.addEntity("Debris");
 		e->cShape = std::make_shared<CShape>(enemy->cShape->sides, (enemy->cShape->radius / (enemy->cShape->sides - 1)), enemy->cShape->colour, enemy->cShape->outlineC, 1 || (enemy->cShape->outlineW / (enemy->cShape->sides - 1)));
 		e->cTransform = std::make_shared<CTransform>(enemy->cTransform->pos, vel, angle);
-		e->cCollision = std::make_shared<CCollision>(m_enemyConfig.c_radius / enemy->cShape->sides);
+		e->cCollision = std::make_shared<CCollision>(config.enemy.c_radius / enemy->cShape->sides);
 		e->cScore = std::make_shared<CScore>(enemy->cScore->val * 2);
-		e->cDuration = std::make_shared<CDuration>(m_enemyConfig.d_life, m_currentFrame);
+		e->cDuration = std::make_shared<CDuration>(config.enemy.d_life, m_currentFrame);
 		angle += (2 * PI / enemy->cShape->sides);
 	}
 	m_score += enemy->cScore->val;
@@ -504,18 +653,18 @@ void Game::spawnBullet(const Vector2 mousePos)
 	
 	float magSquare = direction.x * direction.x + direction.y * direction.y;
 	float mag = sqrt(magSquare);
-	direction.x = direction.x / mag * m_bulletConfig.speed;
-	direction.y = direction.y / mag * m_bulletConfig.speed;
+	direction.x = direction.x / mag * config.bullet.speed;
+	direction.y = direction.y / mag * config.bullet.speed;
 	b->cTransform = std::make_shared<CTransform>(origin, direction);
-	b->cShape = std::make_shared<CShape>(10, m_bulletConfig.radius, m_bulletConfig.col, m_bulletConfig.o_col, m_bulletConfig.o_thick);
-	b->cCollision = std::make_shared<CCollision>(m_enemyConfig.c_radius);
-	b->cDuration = std::make_shared<CDuration>(m_bulletConfig.duration, m_currentFrame);
+	b->cShape = std::make_shared<CShape>(10, config.bullet.radius, config.bullet.col, config.bullet.o_col, config.bullet.o_thick);
+	b->cCollision = std::make_shared<CCollision>(config.enemy.c_radius);
+	b->cDuration = std::make_shared<CDuration>(config.bullet.duration, m_currentFrame);
 }
 
 void Game::spawnSpecial()
 {
 	// TODO: bomb setings in config file?
-	int lastCreated = -1 * m_windowConfig.fps;
+	int lastCreated = -1 * config.window.fps;
 	for (auto e : m_entities.getEntities("Bomb"))
 	{
 		if (e->cDuration->frameCreated > lastCreated)
@@ -523,12 +672,12 @@ void Game::spawnSpecial()
 			lastCreated = e->cDuration->frameCreated;
 		}
 	}
-	if (m_currentFrame > lastCreated + m_windowConfig.fps / 2)
+	if (m_currentFrame > lastCreated + config.window.fps / 2)
 	{
 		auto b = m_entities.addEntity("Bomb");
 		b->cTransform = std::make_shared<CTransform>(m_player->cTransform->pos);
-		b->cShape = std::make_shared<CShape>(4, m_bulletConfig.radius, m_bulletConfig.col, m_bulletConfig.o_col, m_bulletConfig.o_thick);
-		b->cDuration =  std::make_shared<CDuration>(m_bulletConfig.duration, m_currentFrame);
+		b->cShape = std::make_shared<CShape>(4, config.bullet.radius, config.bullet.col, config.bullet.o_col, config.bullet.o_thick);
+		b->cDuration =  std::make_shared<CDuration>(config.bullet.duration, m_currentFrame);
 	}
 }
 
@@ -538,20 +687,20 @@ void Game::sCollision()
 	// horizontal window bounds
 	if (m_player->cTransform->pos.x - m_player->cCollision->radius <= 0)
 	{
-		m_player->cTransform->velocity.x = m_playerConfig.speed;
+		m_player->cTransform->velocity.x = config.player.speed;
 	}
 	else if (m_player->cTransform->pos.x + m_player->cCollision->radius > GetScreenWidth())
 	{
-		m_player->cTransform->velocity.x = -1 * m_playerConfig.speed;
+		m_player->cTransform->velocity.x = -1 * config.player.speed;
 	}
 	// vertical window bounds
 	if (m_player->cTransform->pos.y - m_player->cCollision->radius <= 0)
 	{
-		m_player->cTransform->velocity.y = m_playerConfig.speed;
+		m_player->cTransform->velocity.y = config.player.speed;
 	}
 	else if (m_player->cTransform->pos.y + m_player->cCollision->radius > GetScreenHeight())
 	{
-		m_player->cTransform->velocity.y = -1 * m_playerConfig.speed;
+		m_player->cTransform->velocity.y = -1 * config.player.speed;
 	}
 	// Enemies
 	for (auto enemy : m_entities.getEntities("Enemy"))
@@ -653,8 +802,8 @@ void Game::sCollision()
 
 void Game::load_menu()
 {
-	float posx = m_windowConfig.width / 2;
-	Vector2 radius = {m_windowConfig.width / 6, m_windowConfig.height / 20};
+	float posx = config.window.width / 2;
+	Vector2 radius = {config.window.width / 6, config.window.height / 20};
 	
 	if ( m_logo )
 	{
@@ -662,7 +811,7 @@ void Game::load_menu()
 	}
 	m_overlay.clear();
 	
-	NoGUI::Style playStyle = {OFFGRAY, BLACK, (Vector2){posx, m_windowConfig.height / 2 + radius.y + 10}, radius, 4, 5, 0};
+	NoGUI::Style playStyle = {OFFGRAY, BLACK, (Vector2){posx, config.window.height / 2 + radius.y + 10}, radius, 4, 5, 0};
 	NoGUI::Style setStyle = {OFFGRAY, BLACK, (Vector2){posx, playStyle.pos.y + radius.y * 3}, radius, 4, 5, 0};
 	if ( FileExists("../assets/logo-720p.png") )
 	{
@@ -691,10 +840,10 @@ void Game::load_menu()
 
 void Game::load_settings()
 {
-	float posx = m_windowConfig.width / 1.5;
-	Vector2 radius = {m_windowConfig.width / 6, m_windowConfig.height / 20};
+	float posx = config.window.width / 1.5;
+	Vector2 radius = {config.window.width / 6, config.window.height / 20};
 	
-	NoGUI::Style resStyle = {INVISIBLE, WHITE, (Vector2){posx, m_windowConfig.height / 2}, radius, 4, 5, 0};
+	NoGUI::Style resStyle = {INVISIBLE, WHITE, (Vector2){posx, config.window.height / 2}, radius, 4, 5, 0};
 	
 	std::shared_ptr< NoGUI::Page > spage = m_overlay.addPage();
 	spage->addComponents("Label", std::make_shared< NoGUI::CContainer >());
@@ -725,12 +874,13 @@ bool Game::togglePause()
 void Game::setPause(bool p)
 {
 	m_overlay.getPage(0)->setActive(false);
+	back.currCol = config.window.col;
 	m_paused = p;
 	m_overlay.getPage(1)->setActive(m_paused);
 }
 
 void Game::cleanup()
 {
-	UnloadFont(m_fontConfig.style); // we use smart pointers for everything else
+	UnloadFont(config.font.style); // we use smart pointers for everything else
 	UnloadTexture(*(m_logo.get()));
 }
